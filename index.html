@@ -1,0 +1,740 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Deepfake Crisis: Election Night Emergency (Simulation)</title>
+  <style>
+    :root { --bg:#0b0e14; --card:#121826; --ink:#e8eefc; --muted:#a7b3cc; --accent:#7aa2ff; --danger:#ff6b6b; }
+    *{box-sizing:border-box} body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;background:linear-gradient(180deg,#070a10,#0b0e14);color:var(--ink)}
+    header{padding:18px 16px;border-bottom:1px solid rgba(255,255,255,.08);position:sticky;top:0;background:rgba(11,14,20,.9);backdrop-filter: blur(8px);z-index:5}
+    h1{margin:0;font-size:18px;letter-spacing:.2px} .sub{color:var(--muted);font-size:12px;margin-top:4px}
+    main{max-width:1180px;margin:0 auto;padding:16px;display:grid;gap:12px;grid-template-columns: 1.15fr .85fr}
+    @media (max-width: 980px){ main{grid-template-columns:1fr} header{position:static} }
+    .card{background:rgba(18,24,38,.9);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px;box-shadow: 0 10px 30px rgba(0,0,0,.25)}
+    .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+    .pill{border:1px solid rgba(255,255,255,.14);padding:6px 10px;border-radius:999px;color:var(--muted);font-size:12px}
+    select, button, input, textarea { background:#0c1220;color:var(--ink);border:1px solid rgba(255,255,255,.14);border-radius:10px;padding:10px 10px;font-size:14px }
+    select{padding-right:30px}
+    button{cursor:pointer;transition:.15s transform, .15s opacity}
+    button:hover{transform: translateY(-1px)}
+    button:active{transform: translateY(0px);opacity:.9}
+    .primary{border-color: rgba(122,162,255,.6);background: rgba(122,162,255,.14)}
+    .danger{border-color: rgba(255,107,107,.6);background: rgba(255,107,107,.12)}
+    .muted{color:var(--muted)}
+    .kpi{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+    @media (max-width: 520px){ .kpi{grid-template-columns:1fr} }
+    .meter{padding:12px;border-radius:12px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06)}
+    .meter h3{margin:0 0 8px 0;font-size:13px;color:var(--muted);font-weight:600}
+    .bar{height:10px;border-radius:999px;background:rgba(255,255,255,.08);overflow:hidden}
+    .fill{height:100%;width:50%;background:linear-gradient(90deg,rgba(122,162,255,.25),rgba(122,162,255,.85))}
+    .fill.danger{background:linear-gradient(90deg,rgba(255,107,107,.25),rgba(255,107,107,.85))}
+    .scoreline{display:flex;justify-content:space-between;margin-top:8px;font-size:12px;color:var(--muted)}
+    .event{padding:12px;border-radius:12px;background:rgba(255,255,255,.03);border:1px dashed rgba(255,255,255,.14)}
+    .event h2{margin:0 0 6px 0;font-size:14px}
+    .event p{margin:0;color:var(--ink);line-height:1.35}
+    .grid2{display:grid;grid-template-columns: 1fr 1fr;gap:10px}
+    @media (max-width: 760px){ .grid2{grid-template-columns:1fr} }
+    .list{margin:10px 0 0 0;padding:0;list-style:none}
+    .list li{padding:10px;border-radius:12px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.02);margin-top:8px}
+    .tag{font-size:11px;color:var(--muted)}
+    .hr{height:1px;background:rgba(255,255,255,.08);margin:12px 0}
+    .tiny{font-size:11px;color:var(--muted)}
+    .rightcol{display:grid;gap:12px}
+    textarea{width:100%;min-height:82px;resize:vertical;line-height:1.35}
+    .toast{position:fixed;right:14px;bottom:14px;background:#0c1220;border:1px solid rgba(255,255,255,.14);
+      border-radius:12px;padding:10px 12px;max-width:380px;box-shadow:0 14px 40px rgba(0,0,0,.35);display:none}
+    .toast strong{display:block;margin-bottom:4px}
+    .bigmode{font-size:12px;color:var(--muted)}
+    .projBanner{
+      padding:10px 12px;border-radius:12px;border:1px solid rgba(255,255,255,.1);
+      background:rgba(122,162,255,.10); display:none;
+    }
+    .projBanner b{color:var(--ink)}
+    .btnrow{display:flex;gap:8px;flex-wrap:wrap}
+    .hidden{display:none !important}
+  </style>
+</head>
+<body>
+<header>
+  <h1>Deepfake Crisis: Election Night Emergency</h1>
+  <div class="sub">Choose Teacher Mode (single-player control panel) or Projector Mode (whole-class voting + resolve round).</div>
+</header>
+
+<main>
+  <section class="card">
+    <div class="row" style="justify-content:space-between">
+      <div class="row">
+        <span class="pill" id="roundPill">Round 1</span>
+        <span class="pill" id="endingPill">Ending: Not revealed</span>
+        <span class="pill" id="variantPill">Variant: National</span>
+        <span class="pill" id="modePill">Mode: Teacher</span>
+      </div>
+      <div class="row">
+        <button class="primary" id="newGameBtn">New Game</button>
+        <button id="saveLogBtn">Export Log</button>
+      </div>
+    </div>
+
+    <div class="hr"></div>
+
+    <div class="projBanner" id="projBanner">
+      <b>Projector Mode:</b> pick one action per role, then click <b>Resolve Round</b> to apply all effects at once.
+    </div>
+
+    <div class="kpi" id="meters"></div>
+
+    <div class="hr"></div>
+
+    <div class="grid2">
+      <div class="event">
+        <h2>Base Scenario</h2>
+        <p id="scenarioText"></p>
+        <div class="tiny" style="margin-top:8px">Tip: Use 3 rounds for a single period, 4–5 rounds for deeper debate.</div>
+      </div>
+      <div class="event">
+        <h2>Current Crisis Event</h2>
+        <p id="eventText"></p>
+        <div class="tiny" style="margin-top:8px" id="eventHint"></div>
+      </div>
+    </div>
+
+    <div class="hr"></div>
+
+    <!-- Teacher Mode Panel -->
+    <div class="grid2" id="teacherPanel">
+      <div>
+        <div class="row">
+          <label class="muted" for="roleSel">Choose a role</label>
+          <select id="roleSel"></select>
+        </div>
+        <ul class="list" id="roleCard"></ul>
+      </div>
+
+      <div>
+        <div class="row">
+          <label class="muted" for="actionSel">Choose an action</label>
+          <select id="actionSel"></select>
+        </div>
+
+        <div style="margin-top:10px">
+          <label class="muted tiny">Justification (optional for teacher mode; useful for student evidence)</label>
+          <textarea id="justification" placeholder="Optional: paste a group’s reasoning here."></textarea>
+        </div>
+
+        <div class="btnrow" style="margin-top:10px; justify-content:space-between">
+          <button class="primary" id="commitBtn">Commit Decision</button>
+          <button id="quickCommitBtn">Quick Commit</button>
+          <button id="undoBtn">Undo</button>
+          <button class="danger" id="revealBtn">Reveal Ending</button>
+        </div>
+
+        <div class="tiny" style="margin-top:10px">
+          Teacher Mode applies effects immediately. Undo restores meters to the previous state.
+        </div>
+      </div>
+    </div>
+
+    <!-- Projector Mode Panel -->
+    <div class="card hidden" id="projectorPanel" style="margin-top:10px;background:rgba(255,255,255,.02)">
+      <div class="row" style="justify-content:space-between">
+        <div>
+          <strong>Projector Mode: Round Picks</strong>
+          <div class="bigmode">Pick 1 action per role. Then Resolve Round.</div>
+        </div>
+        <div class="btnrow">
+          <button class="primary" id="resolveRoundBtn">Resolve Round</button>
+          <button id="clearPicksBtn">Clear Picks</button>
+          <button class="danger" id="revealBtn2">Reveal Ending</button>
+        </div>
+      </div>
+      <div class="hr"></div>
+      <div class="grid2" id="projGrid"></div>
+      <div class="tiny" style="margin-top:10px">
+        Tip: Collect votes by show of hands, quick discussion, or a paper ballot — then click the chosen action.
+      </div>
+    </div>
+
+  </section>
+
+  <aside class="rightcol">
+    <section class="card">
+      <div class="row" style="justify-content:space-between">
+        <strong>Controls</strong>
+        <span class="tag">Teacher</span>
+      </div>
+      <div class="hr"></div>
+
+      <div class="row">
+        <label class="muted tiny">Mode</label>
+        <select id="modeSel">
+          <option value="teacher">Teacher (single-player)</option>
+          <option value="projector">Whole-class Projector</option>
+        </select>
+
+        <label class="muted tiny">Variant</label>
+        <select id="variantSel">
+          <option value="national">National</option>
+          <option value="missouri">Missouri</option>
+        </select>
+
+        <label class="muted tiny">Ending Mode</label>
+        <select id="endingSel">
+          <option value="A">A — Confirmed Deepfake</option>
+          <option value="B">B — Video Was Real</option>
+          <option value="C">C — Truth Never Known</option>
+          <option value="random">Random</option>
+        </select>
+      </div>
+
+      <div class="row" style="margin-top:10px">
+        <label class="muted tiny">Rounds</label>
+        <input id="roundsInput" type="number" min="2" max="7" value="3" style="width:90px" />
+        <span class="tiny muted">Recommended: 3</span>
+      </div>
+
+      <div class="hr"></div>
+
+      <div class="row" style="justify-content:space-between">
+        <div>
+          <div class="tiny muted">Secret Incentive</div>
+          <div id="secretObjective" style="margin-top:4px"></div>
+        </div>
+        <button id="toggleSecretBtn">Toggle</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="row" style="justify-content:space-between">
+        <strong>Decision Log</strong>
+        <span class="tag" id="logCount">0 entries</span>
+      </div>
+      <div class="hr"></div>
+      <ul class="list" id="log"></ul>
+    </section>
+
+    <div class="toast" id="toast"><strong id="toastTitle"></strong><div id="toastBody"></div></div>
+  </aside>
+</main>
+
+<script>
+const clamp = (n, lo, hi) => Math.max(lo, Math.min(hi, n));
+const uid = () => Math.random().toString(16).slice(2);
+const now = () => new Date().toLocaleString();
+const $ = (id) => document.getElementById(id);
+
+function toast(title, body){
+  $("toastTitle").textContent = title;
+  $("toastBody").textContent = body;
+  const t = $("toast");
+  t.style.display = "block";
+  setTimeout(()=> t.style.display="none", 3500);
+}
+
+const METERS = [
+  { key: "virality", name: "Virality", desc: "How fast the video spreads", max: 15, warnAt: 12, dangerAt: 14 },
+  { key: "trust", name: "Public Trust", desc: "Confidence in media + elections", max: 15, warnAt: 3, dangerAt: 2, invert: true },
+  { key: "speech", name: "Free Speech Pressure", desc: "Tension around moderation & censorship", max: 15, warnAt: 10, dangerAt: 12 }
+];
+
+const BASE_SCENARIO = {
+  national: "It’s 8:00 PM on election night. A viral video appears showing Candidate Rivera admitting to election interference. No one knows if it’s real. Decisions made in the next hour could shape turnout, trust, and legitimacy.",
+  missouri: "It’s 8:00 PM on election night in Missouri. A viral video appears showing a Missouri Senate candidate admitting to election interference. No one knows if it’s real. Decisions made tonight could shape turnout, trust, and legitimacy across the state."
+};
+
+const ROLES = [
+  { id:"journalist", name:"Investigative Journalist",
+    goals:["Inform the public responsibly","Protect credibility","Avoid spreading misinformation"],
+    powers:["Publish breaking alerts","Add 'unverified' framing","Interview experts"],
+    secret:["Editor wants engagement: If Virality reaches 12+, you gain +2 Influence.","Credibility matters: If Public Trust ends ≥ 10, you gain +2 Influence."]
+  },
+  { id:"voters", name:"Voters",
+    goals:["Make an informed decision","Avoid manipulation","Influence peers responsibly"],
+    powers:["Share or ignore the video","Demand investigation","Organize discussion"],
+    secret:["Polarization risk: If Public Trust drops to 2 or below at any point, you gain +2 Influence (your group rallies).","Responsibility bonus: If Virality ends ≤ 6, you gain +2 Influence."]
+  },
+  { id:"officials", name:"Election Officials",
+    goals:["Maintain public trust","Protect integrity","Avoid accusations of bias"],
+    powers:["Issue official statements","Request investigation","Coordinate with platforms"],
+    secret:["Stability first: If Public Trust ends ≥ 11, you gain +2 Influence.","Backlash danger: If Free Speech Pressure ends ≥ 12, you lose -2 Influence."]
+  },
+  { id:"platform", name:"Social Media Moderation Team",
+    goals:["Reduce harm","Protect free expression","Prevent panic"],
+    powers:["Remove content","Add warning labels","Limit algorithmic spread"],
+    secret:["Avoid hearings: If Free Speech Pressure ends ≤ 8, you gain +2 Influence.","Safety focus: If Virality is reduced by 3+ across rounds, you gain +2 Influence."]
+  }
+];
+
+const ACTIONS = {
+  journalist: [
+    { id:"publish_now", label:"Publish breaking story immediately", effects:{ virality:+2, trust:-1, speech:0 } },
+    { id:"publish_labeled", label:"Publish with 'UNVERIFIED / POSSIBLE DEEPFAKE' framing", effects:{ virality:+1, trust:+0, speech:+0 } },
+    { id:"wait_verify", label:"Wait for verification before publishing", effects:{ virality:-1, trust:+1, speech:0 } },
+    { id:"interview_expert", label:"Feature expert analysis instead of the video", effects:{ virality:-1, trust:+2, speech:0 } }
+  ],
+  voters: [
+    { id:"mass_share", label:"Share widely + urge others to watch", effects:{ virality:+3, trust:-2, speech:+0 } },
+    { id:"share_with_warning", label:"Share with 'not sure if real' warning", effects:{ virality:+1, trust:-1, speech:0 } },
+    { id:"hold_off", label:"Do not share; wait for confirmation", effects:{ virality:-1, trust:+1, speech:0 } },
+    { id:"demand_officials", label:"Demand official investigation + statement", effects:{ virality:+0, trust:+1, speech:+1 } }
+  ],
+  officials: [
+    { id:"neutral_statement", label:"Issue neutral statement: 'We are investigating'", effects:{ virality:+0, trust:+1, speech:+0 } },
+    { id:"warn_deepfake", label:"Warn public about possible deepfake risks", effects:{ virality:-1, trust:+1, speech:+1 } },
+    { id:"delay_results", label:"Delay results announcement pending review", effects:{ virality:+0, trust:+2, speech:+1 } },
+    { id:"request_takedown", label:"Request platforms limit/remove the video", effects:{ virality:-2, trust:+1, speech:+2 } }
+  ],
+  platform: [
+    { id:"remove", label:"Remove the video (policy enforcement)", effects:{ virality:-2, trust:+0, speech:+2 } },
+    { id:"label", label:"Add warning label + link to context", effects:{ virality:-1, trust:+1, speech:+0 } },
+    { id:"limit_spread", label:"Limit algorithmic distribution (downrank)", effects:{ virality:-2, trust:+1, speech:+1 } },
+    { id:"do_nothing", label:"Allow unrestricted sharing", effects:{ virality:+2, trust:-1, speech:+0 } }
+  ]
+};
+
+const EVENTS = {
+  national: [
+    { t:"Viral Explosion", d:"A celebrity reposts the video. Views jump to 3 million in one hour.", hint:"Virality pressure rises.", meter:{virality:+2} },
+    { t:"AI Expert Speaks", d:"A researcher says there are signs of AI manipulation, but cannot confirm yet.", hint:"Ambiguity increases debate.", meter:{speech:+1} },
+    { t:"Conflicting Fact Checks", d:"One fact-check calls it fake. Another says it’s inconclusive.", hint:"Trust becomes fragile.", meter:{trust:-1} },
+    { t:"Rival Outlet Publishes", d:"A competing outlet runs the clip without verification.", hint:"Now it’s everywhere.", meter:{virality:+1, trust:-1} },
+    { t:"Lawsuit Threat", d:"A civil liberties group warns removal could violate free speech rights.", hint:"Speech pressure spikes.", meter:{speech:+2} },
+    { t:"Second Version Appears", d:"A slightly edited version surfaces, making verification harder.", hint:"Chaos grows.", meter:{virality:+1, trust:-1} }
+  ],
+  missouri: [
+    { t:"County Clerk Statement", d:"A Missouri county clerk warns misinformation could confuse absentee voters.", hint:"Officials feel urgency.", meter:{trust:+1, speech:+1} },
+    { t:"AG Inquiry", d:"The Missouri Attorney General hints at an inquiry into platform moderation and bias.", hint:"Speech pressure rises.", meter:{speech:+2} },
+    { t:"Local News Split", d:"Two local stations report conflicting claims about authenticity.", hint:"Trust shakes locally.", meter:{trust:-1} },
+    { t:"Rural vs Urban Divide", d:"Polls show sharply different reactions across regions.", hint:"Polarization risk.", meter:{trust:-1, virality:+1} },
+    { t:"School Board Rumors", d:"A rumor spreads that schools will be used as protest sites tonight.", hint:"Panic may spike.", meter:{virality:+1, trust:-1} }
+  ]
+};
+
+const THRESHOLDS = [
+  { flag:"virality12", when:s=>s.meters.virality>=12 && !s.fired.virality12,
+    fire:()=>({ title:"Threshold: Network Frenzy", body:"Major TV networks begin nonstop coverage. Everyone must act under pressure.", apply:{ trust:-1, virality:+1 }, flag:"virality12" })
+  },
+  { flag:"trust2", when:s=>s.meters.trust<=2 && !s.fired.trust2,
+    fire:()=>({ title:"Threshold: Public Panic", body:"Protests erupt; people question legitimacy. Officials must respond.", apply:{ speech:+1, virality:+1 }, flag:"trust2" })
+  },
+  { flag:"speech10", when:s=>s.meters.speech>=10 && !s.fired.speech10,
+    fire:()=>({ title:"Threshold: Free Speech Backlash", body:"Legal challenge rumored. Platforms hesitate to remove content next round.", apply:{ trust:-1 }, flag:"speech10" })
+  }
+];
+
+const ENDINGS = {
+  A: { name:"Confirmed Deepfake", text:"Experts confirm the video was AI-generated. Debate: Did anyone act too quickly? Was moderation justified?" },
+  B: { name:"Video Was Real", text:"The video turns out authentic. Debate: Did caution prevent accountability? Did ‘deepfake’ claims hide truth?" },
+  C: { name:"Truth Never Known", text:"Experts remain divided. Debate: Can democracy function without certainty? Who decides truth online?" }
+};
+
+const state = {
+  id: uid(),
+  mode: "teacher", // teacher | projector
+  round: 1,
+  roundsTotal: 3,
+  variant: "national",
+  endingMode: "A",
+  endingRevealed: false,
+  meters: { virality:5, trust:5, speech:5 },
+  fired: {},
+  log: [],
+  secretShown: false,
+  secrets: {},
+  projectorPicks: {} // roleId -> actionId
+};
+
+function renderMeters(){
+  const wrap = $("meters");
+  wrap.innerHTML = "";
+  METERS.forEach(m => {
+    const val = state.meters[m.key];
+    const pct = clamp((val / m.max) * 100, 0, 100);
+    const isDanger = (!m.invert && val >= m.dangerAt) || (m.invert && val <= m.dangerAt);
+    const isWarn = (!m.invert && val >= m.warnAt) || (m.invert && val <= m.warnAt);
+    const fillClass = isDanger ? "fill danger" : "fill";
+    const label = isDanger ? "CRITICAL" : isWarn ? "RISK" : "OK";
+    const el = document.createElement("div");
+    el.className = "meter";
+    el.innerHTML = `
+      <h3>${m.name} <span class="tag" style="margin-left:6px">${label}</span></h3>
+      <div class="bar"><div class="${fillClass}" style="width:${pct}%"></div></div>
+      <div class="scoreline"><span>${m.desc}</span><span><strong>${val}</strong> / ${m.max}</span></div>
+    `;
+    wrap.appendChild(el);
+  });
+}
+
+function ensureSecrets(){
+  ROLES.forEach(r=>{
+    if(!state.secrets[r.id]){
+      state.secrets[r.id] = r.secret[Math.floor(Math.random()*r.secret.length)];
+    }
+  });
+}
+
+function setScenarioAndEvent(){
+  $("scenarioText").textContent = BASE_SCENARIO[state.variant];
+  const event = drawEvent();
+  $("eventText").textContent = `${event.t} — ${event.d}`;
+  $("eventHint").textContent = event.hint ? `Hint: ${event.hint}` : "";
+  // Apply passive event meter effect (system log)
+  if(event.meter) applyEffects(event.meter, { system:true, label:`Event: ${event.t}` });
+}
+
+function drawEvent(){
+  const deck = EVENTS[state.variant];
+  const idx = clamp(Math.floor(Math.random() * deck.length), 0, deck.length-1);
+  return deck[idx];
+}
+
+function populateRoles(){
+  const sel = $("roleSel");
+  sel.innerHTML = "";
+  ROLES.forEach(r=>{
+    const opt = document.createElement("option");
+    opt.value = r.id;
+    opt.textContent = r.name;
+    sel.appendChild(opt);
+  });
+  sel.value = "journalist";
+  ensureSecrets();
+  renderRole();
+}
+
+function renderRole(){
+  const roleId = $("roleSel").value;
+  const role = ROLES.find(r=>r.id===roleId);
+  const list = $("roleCard");
+  list.innerHTML = "";
+  [
+    ["Role", role.name],
+    ["Goals", role.goals.join(" • ")],
+    ["Powers", role.powers.join(" • ")]
+  ].forEach(([k,v])=>{
+    const li = document.createElement("li");
+    li.innerHTML = `<div class="tag">${k}</div><div style="margin-top:4px">${v}</div>`;
+    list.appendChild(li);
+  });
+
+  const aSel = $("actionSel");
+  aSel.innerHTML = "";
+  ACTIONS[roleId].forEach(a=>{
+    const opt = document.createElement("option");
+    opt.value = a.id;
+    opt.textContent = a.label;
+    aSel.appendChild(opt);
+  });
+
+  renderSecret();
+}
+
+function renderSecret(){
+  const roleId = $("roleSel").value;
+  $("secretObjective").textContent = state.secretShown ? state.secrets[roleId] : "Hidden (reveal at the end)";
+}
+
+function applyEffects(effects, meta){
+  const before = {...state.meters};
+  Object.entries(effects).forEach(([k,delta])=>{
+    state.meters[k] = clamp(state.meters[k] + delta, 0, 15);
+  });
+  const after = {...state.meters};
+
+  if(meta?.system){
+    state.log.push({
+      id: uid(), ts: now(), round: state.round,
+      role: "system", action: meta.label || "system update",
+      justification: "", effects, metersBefore: before, metersAfter: after
+    });
+    renderLog();
+  }
+
+  renderMeters();
+  checkThresholds();
+}
+
+function checkThresholds(){
+  THRESHOLDS.forEach(th=>{
+    if(th.when(state)){
+      const res = th.fire(state);
+      state.fired[res.flag] = true;
+      toast(res.title, res.body);
+      applyEffects(res.apply, { system:true, label:res.title });
+    }
+  });
+}
+
+function commitDecision({ quick=false } = {}){
+  if(state.endingRevealed){ toast("Game ended", "Start a new game to continue."); return; }
+
+  const roleId = $("roleSel").value;
+  const actionId = $("actionSel").value;
+  const action = ACTIONS[roleId].find(a=>a.id===actionId);
+  const justification = quick ? "" : $("justification").value.trim();
+
+  const before = {...state.meters};
+  applyEffects(action.effects, {});
+  const after = {...state.meters};
+
+  state.log.push({
+    id: uid(), ts: now(), round: state.round,
+    role: roleId, action: action.label,
+    justification, effects: action.effects,
+    metersBefore: before, metersAfter: after
+  });
+
+  if(!quick) $("justification").value = "";
+  renderLog();
+
+  // round advance
+  if(state.round < state.roundsTotal){
+    state.round += 1;
+    $("roundPill").textContent = `Round ${state.round}`;
+    setScenarioAndEvent();
+  } else {
+    toast("Final round reached", "You can reveal the ending now (or keep discussing).");
+  }
+}
+
+function undo(){
+  // Undo last non-system entry; restore meters to its "metersBefore"
+  for(let i=state.log.length-1;i>=0;i--){
+    const entry = state.log[i];
+    if(entry.role !== "system"){
+      state.meters = {...entry.metersBefore};
+      state.log.splice(i, 1);
+      renderMeters();
+      renderLog();
+      toast("Undone", "Last decision removed and meters restored.");
+      return;
+    }
+  }
+  toast("Nothing to undo", "No decisions to undo yet.");
+}
+
+function buildProjectorUI(){
+  const grid = $("projGrid");
+  grid.innerHTML = "";
+  ROLES.forEach(r=>{
+    const box = document.createElement("div");
+    box.className = "event";
+    const pick = state.projectorPicks[r.id];
+    const pickText = pick ? ACTIONS[r.id].find(a=>a.id===pick).label : "None selected yet";
+    box.innerHTML = `
+      <div class="row" style="justify-content:space-between">
+        <div><strong>${r.name}</strong></div>
+        <div class="tag">Pick: ${escapeHtml(pickText)}</div>
+      </div>
+      <div class="hr"></div>
+      <div class="btnrow" id="btns-${r.id}"></div>
+    `;
+    grid.appendChild(box);
+    const btnWrap = box.querySelector(`#btns-${CSS.escape(r.id)}`);
+    ACTIONS[r.id].forEach(a=>{
+      const b = document.createElement("button");
+      b.textContent = a.label;
+      if(state.projectorPicks[r.id] === a.id) b.classList.add("primary");
+      b.addEventListener("click", ()=>{
+        state.projectorPicks[r.id] = a.id;
+        buildProjectorUI();
+      });
+      btnWrap.appendChild(b);
+    });
+  });
+}
+
+function resolveRound(){
+  if(state.endingRevealed){ toast("Game ended", "Start a new game to continue."); return; }
+
+  // Require at least one pick
+  const picks = ROLES.map(r=>state.projectorPicks[r.id]).filter(Boolean);
+  if(picks.length === 0){
+    toast("No picks yet", "Choose at least one action before resolving.");
+    return;
+  }
+
+  // Apply all effects together
+  const combined = { virality:0, trust:0, speech:0 };
+  ROLES.forEach(r=>{
+    const aId = state.projectorPicks[r.id];
+    if(!aId) return;
+    const action = ACTIONS[r.id].find(a=>a.id===aId);
+    Object.entries(action.effects).forEach(([k,v])=> combined[k] += v);
+    state.log.push({
+      id: uid(), ts: now(), round: state.round,
+      role: r.id, action: action.label,
+      justification: "(Projector mode: class decision)",
+      effects: action.effects,
+      metersBefore: null,
+      metersAfter: null
+    });
+  });
+
+  // log one combined application with before/after
+  const before = {...state.meters};
+  applyEffects(combined, {});
+  const after = {...state.meters};
+
+  // backfill metersBefore/After for round entries
+  for(let i=state.log.length-1;i>=0;i--){
+    const e = state.log[i];
+    if(e.round !== state.round) break;
+    if(e.role === "system") continue;
+    if(e.metersBefore === null) e.metersBefore = before;
+    if(e.metersAfter === null) e.metersAfter = after;
+  }
+
+  renderLog();
+  toast("Round resolved", `Applied combined effects: V ${fmt(combined.virality)} · T ${fmt(combined.trust)} · S ${fmt(combined.speech)}`);
+
+  // clear picks for next round
+  state.projectorPicks = {};
+  buildProjectorUI();
+
+  // advance round
+  if(state.round < state.roundsTotal){
+    state.round += 1;
+    $("roundPill").textContent = `Round ${state.round}`;
+    setScenarioAndEvent();
+  } else {
+    toast("Final round reached", "You can reveal the ending now.");
+  }
+}
+
+function clearPicks(){
+  state.projectorPicks = {};
+  buildProjectorUI();
+  toast("Cleared", "All picks cleared for this round.");
+}
+
+function fmt(n){ return (n>0?`+${n}`:`${n}`); }
+
+function revealEnding(){
+  if(state.endingRevealed) return;
+  state.endingRevealed = true;
+  const mode = state.endingMode === "random" ? ["A","B","C"][Math.floor(Math.random()*3)] : state.endingMode;
+  const ending = ENDINGS[mode];
+  $("endingPill").textContent = `Ending: ${ending.name}`;
+  toast("Ending Revealed", ending.text);
+}
+
+function renderLog(){
+  const ul = $("log");
+  ul.innerHTML = "";
+  const entries = state.log.slice().reverse().slice(0, 18);
+  entries.forEach(e=>{
+    const roleName = e.role === "system" ? "System" : ROLES.find(r=>r.id===e.role).name;
+    const li = document.createElement("li");
+    li.innerHTML = `
+      <div class="row" style="justify-content:space-between">
+        <div><strong>${roleName}</strong> <span class="tag">Round ${e.round}</span></div>
+        <div class="tag">${e.ts}</div>
+      </div>
+      <div style="margin-top:6px">${escapeHtml(e.action)}</div>
+      ${e.justification ? `<div class="tiny" style="margin-top:6px;color:var(--muted)">Justification: ${escapeHtml(e.justification)}</div>` : ""}
+      <div class="tiny" style="margin-top:6px">
+        Effects: ${fmtEffects(e.effects)}<br/>
+        Meters: V ${state.meters.virality} · T ${state.meters.trust} · S ${state.meters.speech}
+      </div>
+    `;
+    ul.appendChild(li);
+  });
+  $("logCount").textContent = `${state.log.length} entries`;
+}
+
+function fmtEffects(eff){
+  if(!eff) return "—";
+  const parts = [];
+  ["virality","trust","speech"].forEach(k=>{
+    if(typeof eff[k] === "number" && eff[k] !== 0) parts.push(`${k[0].toUpperCase()}:${fmt(eff[k])}`);
+  });
+  return parts.length ? parts.join("  ") : "—";
+}
+
+function escapeHtml(str){
+  return (str||"").replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+}
+
+function exportLog(){
+  const payload = {
+    gameId: state.id,
+    exportedAt: now(),
+    mode: state.mode,
+    variant: state.variant,
+    endingMode: state.endingMode,
+    roundsTotal: state.roundsTotal,
+    finalMeters: state.meters,
+    secrets: state.secrets,
+    log: state.log
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type:"application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `deepfake-crisis-${state.mode}-log-${state.id}.json`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  toast("Exported", "Downloaded a JSON log (useful for grading evidence).");
+}
+
+function setModeUI(){
+  $("modePill").textContent = `Mode: ${state.mode === "projector" ? "Projector" : "Teacher"}`;
+  $("projBanner").style.display = state.mode === "projector" ? "block" : "none";
+  $("teacherPanel").classList.toggle("hidden", state.mode === "projector");
+  $("projectorPanel").classList.toggle("hidden", state.mode !== "projector");
+  if(state.mode === "projector") buildProjectorUI();
+}
+
+function newGame(){
+  state.id = uid();
+  state.round = 1;
+  state.endingRevealed = false;
+  state.fired = {};
+  state.log = [];
+  state.meters = { virality:5, trust:5, speech:5 };
+  state.secretShown = false;
+  state.secrets = {};
+  state.projectorPicks = {};
+
+  state.mode = $("modeSel").value;
+  state.variant = $("variantSel").value;
+  state.endingMode = $("endingSel").value;
+  state.roundsTotal = clamp(parseInt($("roundsInput").value || "3", 10), 2, 7);
+
+  $("roundPill").textContent = `Round ${state.round}`;
+  $("endingPill").textContent = `Ending: Not revealed`;
+  $("variantPill").textContent = `Variant: ${state.variant === "missouri" ? "Missouri" : "National"}`;
+
+  populateRoles();
+  renderMeters();
+  setScenarioAndEvent();
+  renderLog();
+  setModeUI();
+}
+
+$("roleSel").addEventListener("change", renderRole);
+$("toggleSecretBtn").addEventListener("click", ()=>{ state.secretShown = !state.secretShown; renderSecret(); });
+
+$("commitBtn").addEventListener("click", ()=>commitDecision({quick:false}));
+$("quickCommitBtn").addEventListener("click", ()=>commitDecision({quick:true}));
+$("undoBtn").addEventListener("click", undo);
+
+$("revealBtn").addEventListener("click", revealEnding);
+$("revealBtn2").addEventListener("click", revealEnding);
+
+$("resolveRoundBtn").addEventListener("click", resolveRound);
+$("clearPicksBtn").addEventListener("click", clearPicks);
+
+$("newGameBtn").addEventListener("click", newGame);
+$("saveLogBtn").addEventListener("click", exportLog);
+
+$("modeSel").addEventListener("change", ()=>{ state.mode = $("modeSel").value; setModeUI(); });
+$("variantSel").addEventListener("change", ()=>{ $("variantPill").textContent = `Variant: ${$("variantSel").value === "missouri" ? "Missouri" : "National"}`; });
+$("endingSel").addEventListener("change", ()=>{ state.endingMode = $("endingSel").value; });
+
+renderMeters();
+newGame();
+</script>
+</body>
+</html>
